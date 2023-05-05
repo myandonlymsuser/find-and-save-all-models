@@ -10,28 +10,23 @@ const Model = mongoose.model("Model", new mongoose.Schema({
 }));
 let ID = 0;
 
-async function potarsiModel(id) {
-    try {
-        const { user } = await fetch(`https://xhamsterlive.com/api/front/users/${id}/`).then(res => res.json());
-        if (user && user.isModel && user.broadcastGender === "female") {
-			const model = new Model({
-				ime: user.username,
-				SN: id,
-				pochivaOt: user.wentIdleAt,
-				pornoZvezda: user.isPornStar,
-				portret: user.avatarUrl
-			});
-			
-			await model.save();
-		}
-		ID++;
-		if (id === 100000000) console.log(`---------- Търсенето приключи ----------`);
-		potarsiModel(ID);
-    } catch (fetchUserError) { potarsiModel(id); }
+async function potarsiManekenka(id) {
+  try {
+    const { user } = await fetch(`https://xhamsterlive.com/api/front/users/${id}/`).then(res => res.json());
+    if (user && user.isModel && (user.gender === "female" || user.gender === "females")) {
+      const portret = user.avatarUrl || './no_img_avatar.jpg', pochivaOt = user.wentIdleAt || user.statusChangedAt || "не се знае";
+      const manekenka = new Manekenka({ ime: user.username, SN: id, pochivaOt, pornoZvezda: user.isPornStar, portret });
+
+      await manekenka.save();
+    }
+    ID++;
+    if (id === 100000000) console.log(`---------- Търсенето приключи ----------`);
+    potarsiManekenka(ID);
+  } catch (fetchUserError) { potarsiManekenka(id); }
 }
 
 mongoose.connect(MONGO_URI).then(() => { 
 	console.log("Базата данни е свързана");
-	potarsiModel(ID);
+	potarsiManekenka(ID);
 	console.log("Търсене на модели...");
 }).catch(mongoConnectionErr => { console.log(`mongoConnectionErr: ${mongoConnectionErr}`); });
